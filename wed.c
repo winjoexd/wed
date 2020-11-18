@@ -42,7 +42,6 @@ typedef struct erow {
 	char *render;
 } erow;
 
-
 struct editorConfig
 {
 	char *filename;
@@ -58,7 +57,9 @@ struct editorConfig
 	time_t statusmsg_time;
 	struct termios orig_termios;
 };
+
 struct editorConfig E;
+void editorSetStatusMessage(const char *fmt, ...);
 
 struct abuf
 {
@@ -307,10 +308,19 @@ void editorSave()
 	int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
 
 	if (E.filename == NULL) return;
-	ftruncate(fd, len);
-	write(fd, buf, len);
-	close(fd);
+	if(fd != -1){
+		if(ftruncate(fd, len) != -1){
+			if(write(fd, buf, len) == len){
+				close(fd);
+				free(buf);
+				editorSetStatusMessage("%d bytes written to disk", len);
+				return;
+			}
+		}
+		close(fd);
+	}
 	free(buf);
+	editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
 }
 
 void abAppend(struct abuf *ab, const char *s, int len)
@@ -579,7 +589,7 @@ int main(int argc, char *argv[])
 		editorOpen(argv[1]);
 	}
 
-	editorSetStatusMessage("HELP: Ctrl-Q = quit");
+	editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
 	while(1){
 		editorRefreshScreen();
