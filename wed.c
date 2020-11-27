@@ -301,7 +301,8 @@ void editorFreeRow(erow *row)
 
 void editorDelRow(int at)
 {
-	if (at < 0 || at >= E.numrows) return;
+	if (at < 0 || at >= E.numrows)
+		return;
 	editorFreeRow(&E.row[at]);
 	memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
 	E.numrows--;
@@ -332,7 +333,8 @@ void editorRowAppendString(erow *row, char *s, size_t len)
 
 void editorRowDelChar(erow *row, int at)
 {
-	if (at < 0 || at >= row->size) return;
+	if (at < 0 || at >= row->size)
+		return;
 	memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
 	row->size--;
 	editorUpdateRow(row);
@@ -351,14 +353,19 @@ void editorInsertChar(int c)
 
 void editorDelChar()
 {
-	if (E.cy == E.numrows) return;
-	if (E.cx == 0 && E.cy == 0) return;
+	if (E.cy == E.numrows)
+		return;
+	if (E.cx == 0 && E.cy == 0)
+		return;
 
 	erow *row = &E.row[E.cy];
-	if (E.cx > 0) {
+	if (E.cx > 0)
+	{
 		editorRowDelChar(row, E.cx - 1);
 		E.cx--;
-	} else {
+	}
+	else
+	{
 		E.cx = E.row[E.cy - 1].size;
 		editorRowAppendString(&E.row[E.cy - 1], row->chars, row->size);
 		editorDelRow(E.cy);
@@ -716,7 +723,8 @@ void editorProcessKeypress()
 	case BACKSPACE:
 	case CTRL_KEY('h'):
 	case DEL_KEY:
-		if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+		if (c == DEL_KEY)
+			editorMoveCursor(ARROW_RIGHT);
 		editorDelChar();
 		break;
 	case ARROW_UP:
