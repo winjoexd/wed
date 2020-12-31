@@ -63,12 +63,15 @@ struct editorConfig
 
 struct editorConfig E;
 void editorSetStatusMessage(const char *fmt, ...);
+void editorRefreshScreen();
+char *editorPrompt(char *prompt);
 
 struct abuf
 {
 	char *b;
 	int len;
 };
+
 #define ABUF_INIT \
 	{             \
 		NULL, 0   \
@@ -447,10 +450,20 @@ void editorSave()
 {
 	int len;
 	char *buf = editorRowsToString(&len);
-	int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
+	int fd = 0;
 
 	if (E.filename == NULL)
-		return;
+	{
+		E.filename = editorPrompt("Save as: %s (ESC to cancel)");
+		if (E.filename == NULL)
+		{
+			editorSetStatusMessage("Save aborted");
+			return;
+		}
+	}
+
+	fd = open(E.filename, O_RDWR | O_CREAT, 0644);
+
 	if (fd != -1)
 	{
 		if (ftruncate(fd, len) != -1)
@@ -635,6 +648,52 @@ void editorSetStatusMessage(const char *fmt, ...)
 	vsnprintf(E.statusmsg, sizeof(E.statusmsg), fmt, ap);
 	va_end(ap);
 	E.statusmsg_time = time(NULL);
+}
+
+char *editorPrompt(char *prompt)
+{
+	size_t bufsize = 128;
+	char *buf = malloc(bufsize);
+	size_t buflen = 0;
+	int c = 0;
+
+	buf[0] = '\0';
+
+	while (1)
+	{
+		editorSetStatusMessage(prompt, buf);
+		editorRefreshScreen();
+		c = editorReadKey();
+		if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE)
+		{
+			if (buflen != 0)
+				buf[--buflen] = '\0';
+		}
+		else if (c == '\x1b')
+		{
+			editorSetStatusMessage("");
+			free(buf);
+			return NULL;
+		}
+		else if (c == '\r')
+		{
+			if (buflen != 0)
+			{
+				editorSetStatusMessage("");
+				return buf;
+			}
+		}
+		else if (!iscntrl(c) && c < 128)
+		{
+			if (buflen == bufsize - 1)
+			{
+				bufsize *= 2;
+				buf = realloc(buf, bufsize);
+			}
+			buf[buflen++] = c;
+			buf[buflen] = '\0';
+		}
+	}
 }
 
 void editorMoveCursor(int key)
