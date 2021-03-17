@@ -626,6 +626,8 @@ void editorDrawRows(struct abuf *ab)
 	int padding = 0;
 	int len = 0;
 	int filerow = 0;
+	char *c = NULL;
+	int j = 0;
 
 	for (y = 0; y < E.screenrows; y++)
 	{
@@ -659,7 +661,18 @@ void editorDrawRows(struct abuf *ab)
 				len = 0;
 			if (len > E.screencols)
 				len = E.screencols;
-			abAppend(ab, &E.row[filerow].render[E.coloff], len);
+		//	abAppend(ab, &E.row[filerow].render[E.coloff], len);
+			c = &E.row[filerow].render[E.coloff];
+			for(j=0; j < len ; j++)
+			{
+				if(isdigit(c[j])) {
+					abAppend(ab, "\x1b[31m", 5);
+					abAppend(ab, &c[j], 1);
+					abAppend(ab, "\x1b[39m", 5);
+				} else {
+					abAppend(ab, &c[j], 1);
+				}
+			}
 		}
 
 		abAppend(ab, "\x1b[K", 3);
